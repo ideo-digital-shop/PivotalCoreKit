@@ -8,4 +8,8 @@
 + (CGFloat)lastAnimationSpringWithDamping;
 + (CGFloat)lastAnimationInitialSpringVelocity;
 
++ (void)pauseAnimations;
++ (void)runLastAnimationBlock;
++ (void)runLastCompletionBlock;
+
 @end
