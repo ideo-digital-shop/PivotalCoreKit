@@ -6,8 +6,7 @@ static UIViewAnimationOptions lastAnimationOptions__ = 0;
 static CGFloat lastAnimationSpringWithDamping__ = 0;
 static CGFloat lastAnimationInitialSpringVelocity__ = 0;
 static BOOL shouldImmediatelyExecuteAnimationBlocks__ = YES;
-static void (^lastAnimations__)(void);
-static void (^lastCompletion__)(BOOL);
+static NSMutableArray *animations__;
 
 @implementation UIView (StubbedAnimation)
 
@@ -35,28 +34,24 @@ static void (^lastCompletion__)(BOOL);
     shouldImmediatelyExecuteAnimationBlocks__ = NO;
 }
 
-+ (void)runLastAnimationBlock {
-    lastAnimations__();
-}
-
-+ (void)runLastCompletionBlock {
-    lastCompletion__(YES);
++ (NSArray *)animations {
+    return animations__;
 }
 
 #pragma mark - Overrides
 
 + (void)animateWithDuration:(NSTimeInterval)duration animations:(void (^)(void))animations completion:(void (^)(BOOL))completion {
     lastAnimationDuration__ = duration;
+
+    PCKViewAnimation *animation = [[PCKViewAnimation alloc] init];
+    animation.duration = duration;
+    animation.animationBlock = animations;
+    animation.completionBlock = completion;
+    [animations__ addObject:animation];
+
     if (shouldImmediatelyExecuteAnimationBlocks__) {
-        if (animations) {
-            animations();
-        }
-        if (completion) {
-            completion(YES);
-        }
-    } else {
-        lastAnimations__ = animations;
-        lastCompletion__ = completion;
+        [animation animate];
+        [animation complete];
     }
 }
 
@@ -85,8 +80,26 @@ static void (^lastCompletion__)(BOOL);
     lastAnimationSpringWithDamping__ = 0;
     lastAnimationInitialSpringVelocity__ = 0;
     shouldImmediatelyExecuteAnimationBlocks__ = YES;
-    lastAnimations__ = nil;
-    lastCompletion__ = nil;
+    animations__ = [NSMutableArray array];
 }
 
 @end
+
+@implementation PCKViewAnimation
+
+- (void)animate {
+    self.animationBlock();
+}
+
+- (void)complete {
+    if (self.completionBlock) {
+        self.completionBlock(YES);
+    }
+}
+
+- (void)cancel {
+    self.completionBlock(NO);
+}
+
+@end
+
